@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>小勇士成长挑战：奖惩机制小游戏</title>
+  <style>
+    :root {
+      --bg: #f5f9ff;
+      --card: #ffffff;
+      --primary: #2563eb;
+      --primary-soft: #dbeafe;
+      --good: #16a34a;
+      --bad: #dc2626;
+      --warning: #d97706;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --line: #e5e7eb;
+      --shadow: 0 10px 24px rgba(37, 99, 235, 0.12);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: linear-gradient(165deg, #eff6ff 0%, #fef9c3 100%);
+      font-family: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+      color: var(--text);
+      padding: 16px;
+    }
+
+    .app {
+      width: min(1040px, 100%);
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1.4fr 1fr;
+      gap: 14px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .header {
+      background: linear-gradient(120deg, #2563eb, #0ea5e9);
+      color: #fff;
+      padding: 18px;
+    }
+
+    .header h1 {
+      margin: 0 0 4px;
+      font-size: 1.55rem;
+    }
+
+    .header p { margin: 0; opacity: .95; }
+
+    .body { padding: 14px; }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .stat {
+      border: 1px solid var(--line);
+      background: #f8fafc;
+      border-radius: 12px;
+      padding: 10px;
+      text-align: center;
+    }
+
+    .stat strong {
+      display: block;
+      margin-top: 6px;
+      font-size: 1.25rem;
+    }
+
+    .progress-group {
+      border: 1px dashed #93c5fd;
+      background: #eff6ff;
+      border-radius: 12px;
+      padding: 10px;
+      margin-bottom: 10px;
+    }
+
+    .bar {
+      width: 100%;
+      background: #dbeafe;
+      border-radius: 999px;
+      height: 12px;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+
+    .bar > div {
+      width: 0;
+      height: 100%;
+      background: linear-gradient(90deg, #22c55e, #16a34a);
+      transition: width .3s ease;
+    }
+
+    .scenario {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 10px;
+      line-height: 1.65;
+      background: #ffffff;
+      min-height: 120px;
+    }
+
+    .answer-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 10px;
+      padding: 10px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: transform .15s ease, filter .15s ease;
+    }
+
+    button:hover { transform: translateY(-1px); filter: brightness(1.02); }
+    .good-btn { background: #dcfce7; color: #166534; }
+    .bad-btn { background: #fee2e2; color: #991b1b; }
+    .next-btn { background: #dbeafe; color: #1e40af; }
+    .hint-btn { background: #fef3c7; color: #92400e; }
+    .reset-btn { background: #e5e7eb; color: #111827; }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .difficulty {
+      margin-left: auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: .9rem;
+      color: var(--muted);
+    }
+
+    .side-body { padding: 14px; }
+
+    .reward-box {
+      border-radius: 12px;
+      border: 1px solid #fde68a;
+      background: #fffbeb;
+      padding: 10px;
+      margin-bottom: 10px;
+      line-height: 1.6;
+    }
+
+    .badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .badge {
+      border-radius: 999px;
+      font-size: .82rem;
+      padding: 4px 10px;
+      border: 1px solid #cbd5e1;
+      background: #f8fafc;
+    }
+
+    .badge.on { border-color: #86efac; background: #dcfce7; color: #166534; }
+
+    .log {
+      list-style: none;
+      padding: 0;
+      margin: 8px 0 0;
+      max-height: 340px;
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+    }
+
+    .log li {
+      border-bottom: 1px solid #f1f5f9;
+      padding: 8px;
+      font-size: .9rem;
+    }
+
+    .good { color: var(--good); font-weight: 700; }
+    .bad { color: var(--bad); font-weight: 700; }
+    .tips { color: var(--muted); font-size: .88rem; margin-top: 8px; line-height: 1.6; }
+    .footer-note { margin-top: 10px; color: var(--warning); font-size: .88rem; }
+
+    @media (max-width: 920px) {
+      .app { grid-template-columns: 1fr; }
+      .stats { grid-template-columns: 1fr 1fr; }
+      .difficulty { margin-left: 0; }
+      .answer-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="card">
+      <header class="header">
+        <h1>🦸 小勇士成长挑战</h1>
+        <p>做出好选择，获得积分与星星；连续表现好还能解锁徽章！</p>
+      </header>
+      <div class="body">
+        <div class="stats">
+          <div class="stat">🎯 积分<strong id="score">0</strong></div>
+          <div class="stat">⭐ 星星<strong id="stars">0</strong></div>
+          <div class="stat">🔥 连胜<strong id="streak">0</strong></div>
+          <div class="stat">😊 心情<strong id="mood">平静</strong></div>
+        </div>
+
+        <div class="progress-group">
+          <div>今日目标：<strong id="goalText">0 / 30 分</strong></div>
+          <div class="bar"><div id="goalBar"></div></div>
+        </div>
+
+        <article class="scenario" id="scenario"></article>
+
+        <div class="answer-grid">
+          <button class="good-btn" id="goodBtn">选择好行为 ✅</button>
+          <button class="bad-btn" id="badBtn">选择坏行为 ❌</button>
+        </div>
+
+        <div class="controls">
+          <button class="next-btn" id="nextBtn">下一题 ➡️</button>
+          <button class="hint-btn" id="hintBtn">看看提示 💡</button>
+          <button class="reset-btn" id="resetBtn">重新开始 🔄</button>
+          <label class="difficulty">难度
+            <select id="difficultySel">
+              <option value="easy">简单（±2）</option>
+              <option value="normal" selected>普通（+3/-2）</option>
+              <option value="hard">挑战（+4/-3）</option>
+            </select>
+          </label>
+        </div>
+
+        <p class="tips">玩法：每题只能作答一次；可切换难度；支持自动保存（刷新页面不会丢失进度）。</p>
+      </div>
+    </section>
+
+    <aside class="card">
+      <div class="side-body">
+        <h3 style="margin:0 0 8px">🎁 奖励宝箱</h3>
+        <div class="reward-box" id="rewardText">达到 10 分可抽取一个小奖励建议。</div>
+
+        <h3 style="margin:10px 0 6px">🏅 成长徽章</h3>
+        <div class="badges">
+          <span id="badge10" class="badge">10分新星</span>
+          <span id="badge20" class="badge">20分能手</span>
+          <span id="badge30" class="badge">今日小英雄</span>
+          <span id="badgeStreak" class="badge">3连胜冷静王</span>
+        </div>
+
+        <h3 style="margin:12px 0 6px">📘 成长记录</h3>
+        <ul id="log" class="log"></ul>
+
+        <p class="footer-note">家长建议：出现“坏行为”时，先共情再引导替代做法。</p>
+      </div>
+    </aside>
+  </main>
+
+  <script>
+    const scenarios = [
+      { title: '玩具时间', text: '玩完积木后，地上很乱。', good: '把玩具分类收纳。', bad: '直接离开，让别人收。', hint: '先整理再做下一件事，是负责的表现。' },
+      { title: '作业安排', text: '放学后想先看动画片。', good: '先做完作业再休息。', bad: '拖到睡前匆忙写。', hint: '先难后易，后面会更轻松。' },
+      { title: '排队礼仪', text: '买点心时前面很多人。', good: '安静排队等候。', bad: '插队抢先。', hint: '守规则能让大家都舒服。' },
+      { title: '情绪管理', text: '游戏输了有点生气。', good: '深呼吸，说“我想再试一次”。', bad: '摔手柄、喊叫。', hint: '先让身体平静，再表达想法。' },
+      { title: '合作分享', text: '同学想借你的彩笔。', good: '约好时间后借给他。', bad: '不讲理由地拒绝。', hint: '分享不等于失去，可以约定归还时间。' },
+      { title: '安全习惯', text: '过马路时快迟到了。', good: '走斑马线并看红绿灯。', bad: '直接冲过去。', hint: '安全永远比“快一点”更重要。' }
+    ];
+
+    const rewardIdeas = [
+      '奖励 10 分钟亲子阅读时间 📚',
+      '晚饭后和家人散步 15 分钟 🚶',
+      '获得一次“选择今晚故事”的机会 🌙',
+      '周末可解锁一个手工小任务 ✂️',
+      '给自己画一枚“进步贴纸” 🎨'
+    ];
+
+    const rules = {
+      easy: { good: 2, bad: 2, label: '简单' },
+      normal: { good: 3, bad: 2, label: '普通' },
+      hard: { good: 4, bad: 3, label: '挑战' }
+    };
+
+    const state = {
+      score: 0,
+      stars: 0,
+      streak: 0,
+      current: 0,
+      answered: false,
+      difficulty: 'normal'
+    };
+
+    const refs = {
+      score: document.getElementById('score'),
+      stars: document.getElementById('stars'),
+      streak: document.getElementById('streak'),
+      mood: document.getElementById('mood'),
+      scenario: document.getElementById('scenario'),
+      goalText: document.getElementById('goalText'),
+      goalBar: document.getElementById('goalBar'),
+      log: document.getElementById('log'),
+      rewardText: document.getElementById('rewardText'),
+      difficultySel: document.getElementById('difficultySel')
+    };
+
+    function saveState() {
+      localStorage.setItem('kidRewardGameState', JSON.stringify(state));
+      localStorage.setItem('kidRewardGameLog', refs.log.innerHTML);
+    }
+
+    function loadState() {
+      const cached = localStorage.getItem('kidRewardGameState');
+      const cachedLog = localStorage.getItem('kidRewardGameLog');
+      if (!cached) return;
+      try {
+        const parsed = JSON.parse(cached);
+        Object.assign(state, parsed);
+        if (cachedLog) refs.log.innerHTML = cachedLog;
+      } catch {
+        localStorage.removeItem('kidRewardGameState');
+        localStorage.removeItem('kidRewardGameLog');
+      }
+    }
+
+    function addLog(type, msg) {
+      const li = document.createElement('li');
+      li.innerHTML = `<span class="${type}">${type === 'good' ? '奖励' : '惩罚'}</span>：${msg}`;
+      refs.log.prepend(li);
+    }
+
+    function moodByScore(score) {
+      if (score >= 30) return '超棒';
+      if (score >= 20) return '开心';
+      if (score >= 10) return '平静';
+      return '加油';
+    }
+
+    function updateBadges() {
+      document.getElementById('badge10').classList.toggle('on', state.score >= 10);
+      document.getElementById('badge20').classList.toggle('on', state.score >= 20);
+      document.getElementById('badge30').classList.toggle('on', state.score >= 30);
+      document.getElementById('badgeStreak').classList.toggle('on', state.streak >= 3);
+    }
+
+    function updateRewardText() {
+      if (state.score < 10) {
+        refs.rewardText.textContent = '达到 10 分可抽取一个小奖励建议。';
+        return;
+      }
+      const index = state.score % rewardIdeas.length;
+      refs.rewardText.textContent = `已解锁奖励：${rewardIdeas[index]}`;
+    }
+
+    function updatePanel() {
+      refs.score.textContent = state.score;
+      refs.stars.textContent = state.stars;
+      refs.streak.textContent = state.streak;
+      refs.mood.textContent = moodByScore(state.score);
+      refs.goalText.textContent = `${state.score} / 30 分`;
+      refs.goalBar.style.width = `${Math.min(100, (state.score / 30) * 100)}%`;
+      refs.difficultySel.value = state.difficulty;
+      updateBadges();
+      updateRewardText();
+      saveState();
+    }
+
+    function renderScenario() {
+      const item = scenarios[state.current];
+      refs.scenario.innerHTML = `
+        <strong>情境：${item.title}</strong><br>
+        ${item.text}<br><br>
+        <span style="color:#166534">👍 好行为：${item.good}</span><br>
+        <span style="color:#991b1b">👎 坏行为：${item.bad}</span>
+      `;
+      state.answered = false;
+      saveState();
+    }
+
+    function applyChoice(type) {
+      if (state.answered) return;
+      state.answered = true;
+      const scoreRule = rules[state.difficulty];
+
+      if (type === 'good') {
+        state.score += scoreRule.good;
+        state.streak += 1;
+        addLog('good', `选择好行为，+${scoreRule.good} 分（${scoreRule.label}模式）`);
+      } else {
+        state.score = Math.max(0, state.score - scoreRule.bad);
+        state.streak = 0;
+        addLog('bad', `选择坏行为，-${scoreRule.bad} 分（${scoreRule.label}模式）`);
+      }
+
+      state.stars = Math.floor(state.score / 5);
+
+      if (state.score >= 30) {
+        addLog('good', '🎉 恭喜达成 30 分，解锁“今日小英雄”！');
+      }
+      if (state.streak === 3) {
+        addLog('good', '👏 连续 3 次好选择，解锁“冷静王”徽章！');
+      }
+
+      updatePanel();
+    }
+
+    function nextScenario() {
+      state.current = (state.current + 1) % scenarios.length;
+      renderScenario();
+      updatePanel();
+    }
+
+    function showHint() {
+      const item = scenarios[state.current];
+      addLog('good', `提示：${item.hint}`);
+      saveState();
+    }
+
+    function resetGame() {
+      state.score = 0;
+      state.stars = 0;
+      state.streak = 0;
+      state.current = 0;
+      state.answered = false;
+      state.difficulty = 'normal';
+      refs.log.innerHTML = '';
+      addLog('good', '新的一天开始，来做今天的成长挑战吧！');
+      renderScenario();
+      updatePanel();
+    }
+
+    document.getElementById('goodBtn').addEventListener('click', () => applyChoice('good'));
+    document.getElementById('badBtn').addEventListener('click', () => applyChoice('bad'));
+    document.getElementById('nextBtn').addEventListener('click', nextScenario);
+    document.getElementById('hintBtn').addEventListener('click', showHint);
+    document.getElementById('resetBtn').addEventListener('click', resetGame);
+    refs.difficultySel.addEventListener('change', (e) => {
+      state.difficulty = e.target.value;
+      addLog('good', `已切换到${rules[state.difficulty].label}模式。`);
+      updatePanel();
+    });
+
+    loadState();
+    if (!refs.log.innerHTML.trim()) {
+      addLog('good', '欢迎来到小勇士成长挑战！');
+    }
+    renderScenario();
+    updatePanel();
+  </script>
+</body>
+</html>
